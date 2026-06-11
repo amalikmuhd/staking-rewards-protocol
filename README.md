@@ -1,66 +1,55 @@
-## Foundry
+# Staking & Rewards Protocol
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A simple staking protocol built with [Foundry](https://book.getfoundry.sh/).
 
-Foundry consists of:
+Users stake **STK** tokens to earn rewards distributed linearly over a reward
+period (Synthetix-style accounting). Anyone who has staked continuously for at
+least **7 days** can also claim a **RewardNFT** — an ERC721 badge that can only
+be minted by the staking contract, once per address.
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Contracts
 
-## Documentation
+| Contract | Description |
+|----------|-------------|
+| `StakingRewards` | Stake `stakingToken`, earn `rewardsToken`, claim a RewardNFT after 7 days. |
+| `RewardNFT` | ERC721 reward badge; mintable only by the `StakingRewards` contract. |
 
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
+## Install & Build
 
 ```shell
-$ forge test
+forge install
+forge build
 ```
 
-### Format
+## Test
 
 ```shell
-$ forge fmt
+forge test
 ```
 
-### Gas Snapshots
+## Deploy
+
+The deploy script (`script/Deploy.s.sol`) reads three environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `OWNER` | Address that can fund rewards and configure the contract. |
+| `STAKING_TOKEN` | ERC20 that users stake. |
+| `REWARDS_TOKEN` | ERC20 paid out as rewards. |
 
 ```shell
-$ forge snapshot
+export OWNER=0x...
+export STAKING_TOKEN=0x...
+export REWARDS_TOKEN=0x...
+
+forge script script/Deploy.s.sol:DeployStakingRewards \
+  --rpc-url $RPC_URL --broadcast
 ```
 
-### Anvil
+### Deploy order
 
-```shell
-$ anvil
-```
+Because each contract needs the other's address, deploy in this order:
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+1. Deploy **`StakingRewards`**.
+2. Deploy **`RewardNFT`**, passing the `StakingRewards` address as the `minter`.
+3. Call **`StakingRewards.setRewardNFT(rewardNFTAddress)`** to wire the NFT in.
