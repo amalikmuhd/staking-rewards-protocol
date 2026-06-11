@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {RewardNFT} from "./RewardNFT.sol";
 
 /// @title StakingRewards
 /// @notice Stake `stakingToken` to earn `rewardsToken`, distributed linearly over a
@@ -37,6 +38,13 @@ contract StakingRewards is ReentrancyGuard, Ownable {
     uint256 private _totalSupply;
     mapping(address account => uint256) private _balances;
 
+    /// @notice Reward NFT minted via `claimNFT`; set once by the owner.
+    RewardNFT public rewardNFT;
+    /// @notice Timestamp of each account's most recent stake.
+    mapping(address account => uint256) public stakedAt;
+    /// @notice Whether an account has already claimed its RewardNFT.
+    mapping(address account => bool) public hasClaimedNFT;
+
     /* ----------------------------------- Events --------------------------------- */
 
     event Staked(address indexed user, uint256 amount);
@@ -51,6 +59,8 @@ contract StakingRewards is ReentrancyGuard, Ownable {
     error InsufficientBalance();
     error RewardTooHigh();
     error RewardPeriodActive();
+    error StakeNotMatured();
+    error AlreadyClaimed();
 
     /* --------------------------------- Constructor ------------------------------ */
 
@@ -111,6 +121,7 @@ contract StakingRewards is ReentrancyGuard, Ownable {
         if (amount == 0) revert ZeroAmount();
         _totalSupply += amount;
         _balances[msg.sender] += amount;
+        stakedAt[msg.sender] = block.timestamp;
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
@@ -120,6 +131,7 @@ contract StakingRewards is ReentrancyGuard, Ownable {
         if (_balances[msg.sender] < amount) revert InsufficientBalance();
         _totalSupply -= amount;
         _balances[msg.sender] -= amount;
+        stakedAt[msg.sender] = 0;
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
@@ -169,5 +181,20 @@ contract StakingRewards is ReentrancyGuard, Ownable {
         if (_rewardsDuration == 0) revert ZeroAmount();
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(_rewardsDuration);
+    }
+
+    /// @notice Set the RewardNFT contract that `claimNFT` mints from.
+    function setRewardNFT(address _rewardNFT) external onlyOwner {
+        rewardNFT = RewardNFT(_rewardNFT);
+    }
+
+    /// @notice Mint a RewardNFT to the caller once they have staked for at least 7 days.
+    function claimNFT() external {
+        if (stakedAt[msg.sender] == 0 || block.timestamp < stakedAt[msg.sender] + 7 days) {
+            revert StakeNotMatured();
+        }
+        if (hasClaimedNFT[msg.sender]) revert AlreadyClaimed();
+        hasClaimedNFT[msg.sender] = true;
+        rewardNFT.mint(msg.sender);
     }
 }
