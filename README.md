@@ -14,6 +14,15 @@ be minted by the staking contract, once per address.
 | `StakingRewards` | Stake `stakingToken`, earn `rewardsToken`, claim a RewardNFT after 7 days. |
 | `RewardNFT` | ERC721 reward badge; mintable only by the `StakingRewards` contract. |
 
+## Deployed Contracts (Sepolia)
+
+| Contract | Address |
+|----------|---------|
+| `StakingRewards` | [`0x79ADDefa461A787D79913421f896ce9E78dFba55`](https://sepolia.etherscan.io/address/0x79ADDefa461A787D79913421f896ce9E78dFba55) |
+| `RewardNFT` | [`0x30ebb52eDD59feDae9000C5B32af19f3035e8288`](https://sepolia.etherscan.io/address/0x30ebb52eDD59feDae9000C5B32af19f3035e8288) |
+| `StakeToken` (STK) | [`0xa89d75fe5DAc2de98e017d63D86efA43F32A133F`](https://sepolia.etherscan.io/address/0xa89d75fe5DAc2de98e017d63D86efA43F32A133F) |
+| `RewardToken` (RWD) | [`0x90D3c7A00013B4C2cD373d81da35292734A812e1`](https://sepolia.etherscan.io/address/0x90D3c7A00013B4C2cD373d81da35292734A812e1) |
+
 ## Install & Build
 
 ```shell
