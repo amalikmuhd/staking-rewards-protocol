@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STK Faucet · Staking &amp; Rewards</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+
+  <style>
+    :root {
+      --accent: #4f46e5;
+      --accent-soft: #eef2ff;
+      --accent-hover: #4338ca;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e7e9f0;
+      --good: #047857;
+      --good-soft: #ecfdf5;
+      --warn: #b45309;
+      --radius: 18px;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.06);
+      --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 32px 20px 80px; }
+
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #7c74f3);
+      display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 18px;
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+    }
+    .brand h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+    .brand span { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+
+    button {
+      font-family: inherit; font-weight: 600; cursor: pointer; border: none; border-radius: 12px;
+      transition: background .15s ease, transform .05s ease, box-shadow .15s ease, opacity .15s ease;
+    }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent); color: #fff; padding: 14px 18px; font-size: 14.5px; width: 100%;
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.22);
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-connect { background: var(--ink); color: #fff; padding: 10px 18px; font-size: 13.5px; }
+    .btn-connect:hover:not(:disabled) { background: #1e293b; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line);
+      border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-sm);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 28px; margin-bottom: 18px;
+    }
+    .hero { text-align: center; margin-bottom: 22px; }
+    .hero .drop {
+      width: 60px; height: 60px; border-radius: 16px; margin: 0 auto 16px;
+      background: linear-gradient(135deg, #faf5ff, #eef2ff); border: 1px solid var(--line);
+      display: grid; place-items: center; font-size: 28px;
+    }
+    .hero h2 { font-size: 20px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .hero p { color: var(--muted); font-size: 14px; margin: 0 auto; max-width: 360px; }
+
+    label { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .03em; }
+
+    .field {
+      display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line);
+      border-radius: 12px; padding: 4px 4px 4px 16px; margin-bottom: 8px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: #fff; }
+    .field input {
+      flex: 1; border: none; background: transparent; font-family: 'Inter', monospace; font-size: 14.5px;
+      font-weight: 500; color: var(--ink); outline: none; padding: 13px 0; width: 100%;
+    }
+    .field .self {
+      background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700;
+      padding: 8px 12px; border-radius: 9px; white-space: nowrap;
+    }
+    .field .self:hover { background: #e0e4ff; }
+
+    .hint { font-size: 12.5px; color: var(--muted); margin: 0 0 20px; min-height: 16px; }
+    .hint.err { color: #b91c1c; }
+    .hint.ok { color: var(--good); }
+
+    .amount-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;
+    }
+    .amount-row .k { font-size: 13.5px; color: var(--muted); font-weight: 500; }
+    .amount-row .v { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+    .amount-row .v span { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 4px; }
+
+    .note {
+      display: flex; gap: 10px; align-items: flex-start; background: var(--good-soft);
+      border-radius: 12px; padding: 13px 15px; font-size: 12.5px; color: var(--good); margin-top: 16px; line-height: 1.45;
+    }
+
+    .links { text-align: center; margin-top: 24px; font-size: 13px; }
+    .links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .links a:hover { text-decoration: underline; }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--ink); color: #fff; padding: 13px 20px; border-radius: 12px; font-size: 13.5px;
+      font-weight: 500; box-shadow: 0 12px 32px rgba(0,0,0,.25); opacity: 0; pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease; max-width: 90vw; z-index: 50;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.err { background: #b91c1c; }
+    #toast.ok { background: var(--good); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">S</div>
+        <div>
+          <h1>STK Faucet</h1>
+          <span>Sepolia Testnet</span>
+        </div>
+      </div>
+      <button id="connectBtn" class="btn-connect">Connect Wallet</button>
+    </header>
+
+    <div class="card">
+      <div class="hero">
+        <div class="drop">🚰</div>
+        <h2>Get test STK</h2>
+        <p>Mint 1,000 STK to any Sepolia address. Connect a wallet to cover the gas, paste the destination, and you're done.</p>
+      </div>
+
+      <label for="addr">Destination address</label>
+      <div class="field">
+        <input id="addr" type="text" placeholder="0x…" autocomplete="off" spellcheck="false" />
+        <button class="self" id="selfBtn">USE MINE</button>
+      </div>
+      <p class="hint" id="hint">Tokens are minted to this address.</p>
+
+      <div class="amount-row">
+        <span class="k">You will mint</span>
+        <span class="v">1,000<span>STK</span></span>
+      </div>
+
+      <button class="btn-primary" id="fundBtn">Get 1000 STK</button>
+
+      <div class="note">
+        <span>💡</span>
+        <span>Minting only sends STK. The destination wallet still needs a little Sepolia ETH to pay gas when it stakes — grab some from a public Sepolia faucet.</span>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="./index.html">← Back to staking app</a>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const STK_ADDR = "0xa89d75fe5DAc2de98e017d63D86efA43F32A133F";
+    const SEPOLIA_ID = 11155111n;
+
+    const ERC20_ABI = [
+      "function mint(address,uint256)",
+      "function decimals() view returns (uint8)",
+      "function balanceOf(address) view returns (uint256)"
+    ];
+
+    let provider, signer, account, stk, decimals = 18;
+    const $ = (id) => document.getElementById(id);
+
+    let toastTimer;
+    function toast(msg, kind = "") {
+      const t = $("toast");
+      t.textContent = msg;
+      t.className = "show " + kind;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => (t.className = ""), 4500);
+    }
+
+    function short(a) { return a.slice(0, 6) + "…" + a.slice(-4); }
+
+    async function connect() {
+      if (!window.ethereum) { toast("No wallet found. Install MetaMask.", "err"); return; }
+      try {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+
+        const net = await provider.getNetwork();
+        if (net.chainId !== SEPOLIA_ID) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: "0xaa36a7" }]
+            });
+            provider = new ethers.BrowserProvider(window.ethereum);
+          } catch (_) {
+            toast("Please switch your wallet to Sepolia.", "err");
+            return;
+          }
+        }
+
+        signer = await provider.getSigner();
+        account = await signer.getAddress();
+        stk = new ethers.Contract(STK_ADDR, ERC20_ABI, signer);
+        try { decimals = Number(await stk.decimals()); } catch (_) { decimals = 18; }
+
+        const b = $("connectBtn");
+        b.classList.remove("btn-connect");
+        b.classList.add("pill");
+        b.disabled = true;
+        b.style.cursor = "default";
+        b.innerHTML = `<span class="dot"></span>${short(account)}`;
+
+        if (!$("addr").value.trim()) $("addr").value = account;
+        validate();
+        toast("Wallet connected.", "ok");
+      } catch (e) {
+        console.error(e);
+        toast(e?.info?.error?.message || "Connection failed.", "err");
+      }
+    }
+
+    function validate() {
+      const v = $("addr").value.trim();
+      const hint = $("hint");
+      if (!v) { hint.textContent = "Tokens are minted to this address."; hint.className = "hint"; return false; }
+      if (!ethers.isAddress(v)) { hint.textContent = "That doesn't look like a valid address."; hint.className = "hint err"; return false; }
+      hint.textContent = "Valid address ✓"; hint.className = "hint ok"; return true;
+    }
+
+    async function fund() {
+      if (!account) { await connect(); if (!account) return; }
+      const to = $("addr").value.trim();
+      if (!ethers.isAddress(to)) { toast("Enter a valid destination address.", "err"); validate(); return; }
+
+      const btn = $("fundBtn");
+      const label = btn.textContent;
+      try {
+        const amount = ethers.parseUnits("1000", decimals);
+        btn.disabled = true; btn.textContent = "Confirm in wallet…";
+        const tx = await stk.mint(to, amount);
+        btn.textContent = "Minting…";
+        toast("Minting 1,000 STK…");
+        await tx.wait();
+        toast(`Sent 1,000 STK to ${short(to)} 🎉`, "ok");
+        $("hint").textContent = `Minted! ${short(to)} now holds more STK.`;
+        $("hint").className = "hint ok";
+      } catch (e) {
+        console.error(e);
+        const reason = e?.reason || e?.shortMessage || e?.info?.error?.message || "Transaction failed.";
+        toast(reason, "err");
+      } finally {
+        btn.disabled = false; btn.textContent = label;
+      }
+    }
+
+    $("connectBtn").addEventListener("click", connect);
+    $("fundBtn").addEventListener("click", fund);
+    $("addr").addEventListener("input", validate);
+    $("selfBtn").addEventListener("click", () => {
+      if (account) { $("addr").value = account; validate(); }
+      else toast("Connect your wallet first.", "err");
+    });
+
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", () => location.reload());
+      window.ethereum.on("chainChanged", () => location.reload());
+    }
+  </script>
+</body>
+</html>
