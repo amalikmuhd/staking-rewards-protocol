@@ -185,10 +185,10 @@
 
       <div class="amount-row">
         <span class="k">Send for gas</span>
-        <span class="v">0.02<span>ETH</span></span>
+        <span class="v">0.005<span>ETH</span></span>
       </div>
 
-      <button class="btn-soft" id="gasBtn">⛽ Send 0.02 Sepolia ETH</button>
+      <button class="btn-soft" id="gasBtn">⛽ Send 0.005 Sepolia ETH</button>
 
       <div class="note">
         <span>💡</span>
@@ -310,18 +310,18 @@
       const btn = $("gasBtn");
       const label = btn.textContent;
       try {
-        const value = ethers.parseEther("0.02");
+        const value = ethers.parseEther("0.005");
         const bal = await provider.getBalance(account);
         if (bal < value) {
-          toast("Your connected wallet doesn't have 0.02 ETH to send.", "err");
+          toast("Your connected wallet doesn't have 0.005 ETH to send.", "err");
           return;
         }
         btn.disabled = true; btn.textContent = "Confirm in wallet…";
         const tx = await signer.sendTransaction({ to, value });
         btn.textContent = "Sending…";
-        toast("Sending 0.02 ETH for gas…");
+        toast("Sending 0.005 ETH for gas…");
         await tx.wait();
-        toast(`Sent 0.02 ETH to ${short(to)} ⛽`, "ok");
+        toast(`Sent 0.005 ETH to ${short(to)} ⛽`, "ok");
         $("hint").textContent = `Gas sent to ${short(to)}.`;
         $("hint").className = "hint ok";
       } catch (e) {
