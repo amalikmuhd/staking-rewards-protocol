@@ -63,6 +63,18 @@
     }
     .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
 
+    .btn-soft {
+      background: #fff; color: var(--ink); border: 1px solid var(--line);
+      padding: 14px 18px; font-size: 14.5px; width: 100%; box-shadow: var(--shadow-sm);
+    }
+    .btn-soft:hover:not(:disabled) { background: #fafbfc; border-color: #d8dbe6; }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px; margin: 22px 0 16px;
+      font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+    }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
     .btn-connect { background: var(--ink); color: #fff; padding: 10px 18px; font-size: 13.5px; }
     .btn-connect:hover:not(:disabled) { background: #1e293b; }
 
@@ -151,8 +163,8 @@
     <div class="card">
       <div class="hero">
         <div class="drop">🚰</div>
-        <h2>Get test STK</h2>
-        <p>Mint 1,000 STK to any Sepolia address. Connect a wallet to cover the gas, paste the destination, and you're done.</p>
+        <h2>Fund a wallet</h2>
+        <p>Send 1,000 STK and a little Sepolia ETH for gas to any address. Connect a funded wallet, paste the destination, done — perfect for onboarding teammates.</p>
       </div>
 
       <label for="addr">Destination address</label>
@@ -169,9 +181,18 @@
 
       <button class="btn-primary" id="fundBtn">Get 1000 STK</button>
 
+      <div class="divider">＋ send gas</div>
+
+      <div class="amount-row">
+        <span class="k">Send for gas</span>
+        <span class="v">0.02<span>ETH</span></span>
+      </div>
+
+      <button class="btn-soft" id="gasBtn">⛽ Send 0.02 Sepolia ETH</button>
+
       <div class="note">
         <span>💡</span>
-        <span>Minting only sends STK. The destination wallet still needs a little Sepolia ETH to pay gas when it stakes — grab some from a public Sepolia faucet.</span>
+        <span><strong>STK mint</strong> works from any wallet (the mint function is public). <strong>Gas</strong> is sent from <em>your connected wallet's own ETH balance</em> — so connect a funded wallet to top up teammates. A brand-new wallet needs gas before it can do anything, so send it some ETH here too.</span>
       </div>
     </div>
 
@@ -281,8 +302,40 @@
       }
     }
 
+    async function sendGas() {
+      if (!account) { await connect(); if (!account) return; }
+      const to = $("addr").value.trim();
+      if (!ethers.isAddress(to)) { toast("Enter a valid destination address.", "err"); validate(); return; }
+
+      const btn = $("gasBtn");
+      const label = btn.textContent;
+      try {
+        const value = ethers.parseEther("0.02");
+        const bal = await provider.getBalance(account);
+        if (bal < value) {
+          toast("Your connected wallet doesn't have 0.02 ETH to send.", "err");
+          return;
+        }
+        btn.disabled = true; btn.textContent = "Confirm in wallet…";
+        const tx = await signer.sendTransaction({ to, value });
+        btn.textContent = "Sending…";
+        toast("Sending 0.02 ETH for gas…");
+        await tx.wait();
+        toast(`Sent 0.02 ETH to ${short(to)} ⛽`, "ok");
+        $("hint").textContent = `Gas sent to ${short(to)}.`;
+        $("hint").className = "hint ok";
+      } catch (e) {
+        console.error(e);
+        const reason = e?.reason || e?.shortMessage || e?.info?.error?.message || "Transaction failed.";
+        toast(reason, "err");
+      } finally {
+        btn.disabled = false; btn.textContent = label;
+      }
+    }
+
     $("connectBtn").addEventListener("click", connect);
     $("fundBtn").addEventListener("click", fund);
+    $("gasBtn").addEventListener("click", sendGas);
     $("addr").addEventListener("input", validate);
     $("selfBtn").addEventListener("click", () => {
       if (account) { $("addr").value = account; validate(); }
