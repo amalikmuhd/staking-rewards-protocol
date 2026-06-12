@@ -374,6 +374,7 @@
             <div class="value"><span id="stakedBal">0.00</span><span class="unit">STK</span></div>
           </div>
         </div>
+        <button class="btn-ghost" id="faucetBtn" style="margin-top:16px">＋ Get test STK</button>
       </div>
 
       <!-- Stake / Unstake -->
@@ -453,7 +454,8 @@
       "function balanceOf(address) view returns (uint256)",
       "function allowance(address,address) view returns (uint256)",
       "function approve(address,uint256) returns (bool)",
-      "function decimals() view returns (uint8)"
+      "function decimals() view returns (uint8)",
+      "function mint(address,uint256)"
     ];
 
     /* ---------------------------- State ----------------------------- */
@@ -674,6 +676,15 @@
       await tx(() => staking.claimNFT(), "Claiming NFT…", "NFT claimed 🎉");
     }
 
+    async function doFaucet() {
+      const amount = ethers.parseUnits("1000", decimals);
+      await tx(
+        () => stk.mint(account, amount),
+        "Minting 1000 STK…",
+        "Minted 1000 STK to your wallet."
+      );
+    }
+
     /* ----------------------------- Wire ----------------------------- */
     $("connectBtn").addEventListener("click", connect);
     $("connectBtn2").addEventListener("click", connect);
@@ -681,6 +692,7 @@
     $("unstakeBtn").addEventListener("click", doUnstake);
     $("claimBtn").addEventListener("click", doClaim);
     $("claimNftBtn").addEventListener("click", doClaimNft);
+    $("faucetBtn").addEventListener("click", doFaucet);
     $("maxBtn").addEventListener("click", () => {
       if (window._wallet !== undefined) {
         $("stakeInput").value = ethers.formatUnits(window._wallet, decimals);
