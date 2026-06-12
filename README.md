@@ -23,18 +23,65 @@ be minted by the staking contract, once per address.
 | `StakeToken` (STK) | [`0xa89d75fe5DAc2de98e017d63D86efA43F32A133F`](https://sepolia.etherscan.io/address/0xa89d75fe5DAc2de98e017d63D86efA43F32A133F) |
 | `RewardToken` (RWD) | [`0x90D3c7A00013B4C2cD373d81da35292734A812e1`](https://sepolia.etherscan.io/address/0x90D3c7A00013B4C2cD373d81da35292734A812e1) |
 
-## Install & Build
+## Frontend
+
+A minimal web UI lives in [`frontend/`](frontend/) — plain HTML with
+[ethers.js](https://docs.ethers.org/) loaded from a CDN, no build step. It talks
+to the deployed Sepolia contracts above through MetaMask.
+
+| Page | Purpose |
+|------|---------|
+| `index.html` | Connect a wallet, view STK balance and staked amount, stake / unstake, claim rewards, and claim the loyalty NFT (with day-by-day progress toward the 7-day threshold). |
+| `faucet.html` | Mint 1,000 test STK to any address (the mock token's `mint` is public) and optionally send 0.005 Sepolia ETH for gas from your connected wallet — handy for onboarding teammates. |
+
+Run it with any static file server:
 
 ```shell
-forge install
+cd frontend
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+Requirements:
+
+- **MetaMask** (or another injected wallet) set to the **Sepolia** network; the
+  app prompts a network switch if needed.
+- A little **Sepolia ETH** in your wallet to pay gas. Minting STK gives you tokens
+  but not gas — use the faucet page's gas top-up, or a public Sepolia faucet, to
+  fund a fresh wallet before staking.
+
+> The contract addresses are hard-coded in the page scripts. If you redeploy,
+> update `STAKING_ADDR`, `NFT_ADDR`, and `STK_ADDR` at the top of the `<script>`
+> block in both files.
+
+## Install & Build
+
+Requires [Foundry](https://book.getfoundry.sh/getting-started/installation)
+(`forge`, `cast`). Install it with:
+
+```shell
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
+
+Then clone the repo and build:
+
+```shell
+git clone https://github.com/amalikmuhd/staking-rewards-protocol.git
+cd staking-rewards-protocol
+forge install   # pulls dependencies (OpenZeppelin, forge-std)
 forge build
 ```
 
 ## Test
 
+Runs the unit, fuzz, and invariant suites:
+
 ```shell
 forge test
 ```
+
+Add `-vvv` for traces, or `forge test --gas-report` for gas usage.
 
 ## Deploy
 
